@@ -1,14 +1,18 @@
 from numpy import zeros, int8, log
 from pylab import random
-
 import sys
 import jieba
 import re
 import time
 import codecs
 
-
 # segmentation, stopwords filtering and document-word matrix generating
+# [return]:
+# N : number of documents
+# M : length of dictionary
+# word2id : a map mapping terms to their corresponding ids
+# id2word : a map mapping ids to terms
+# X : document-word matrix, N*M, each line is the number of terms that show up in the document
 def preprocessing(datasetFilePath, stopwordsFilePath):
     
     # read the stopwords file
@@ -28,7 +32,6 @@ def preprocessing(datasetFilePath, stopwordsFilePath):
     word2id = {}
     id2word = {}
     currentId = 0;
-    
     # generate the word2id and id2word maps and count the number of times of words showing up in documents
     for document in documents:
         segList = jieba.cut(document)
@@ -70,7 +73,6 @@ def initializeParameters():
         for j in range(0, M):
             theta[i, j] /= normalization;
 
-
 def EStep():
     for i in range(0, N):
         for j in range(0, M):
@@ -84,8 +86,6 @@ def EStep():
             else:
                 for k in range(0, K):
                     p[i, j, k] /= denominator;
-
-
 
 def MStep():
     # update theta
@@ -103,7 +103,6 @@ def MStep():
             for j in range(0, M):
                 theta[k, j] /= denominator
         
-
     # update lamda
     for i in range(0, N):
         for k in range(0, K):
@@ -117,6 +116,7 @@ def MStep():
             else:
                 lamda[i, k] /= denominator
 
+# calculate the log likelihood
 def LogLikelihood():
     loglikelihood = 0
     for i in range(0, N):
@@ -128,6 +128,7 @@ def LogLikelihood():
                 loglikelihood += X[i, j] * log(tmp)
     return loglikelihood
 
+# output the params of model and top words of topics to files
 def output():
     # document-topic distribution
     file = codecs.open(docTopicDist,'w','utf-8')
@@ -166,13 +167,10 @@ def output():
         file.write(tmp + '\n')
     file.close()
     
-    
-
-    
-# params
+# set the default params and read the params from cmd
 datasetFilePath = 'dataset.txt'
 stopwordsFilePath = 'stopwords.dic'
-K = 10 # number of topic
+K = 10    # number of topic
 maxIteration = 30
 convengenceThreshold = 10.0
 topicWordsNum = 10
@@ -192,13 +190,7 @@ if(len(sys.argv) == 11):
     dictionary = sys.argv[9]
     topicWords = sys.argv[10]
 
-        
-    
-# N : number of documents
-# M : length of dictionary
-# word2id : a map mapping terms to their corresponding ids
-# id2word : a map mapping ids to terms
-# X : document-word matrix, N*M, each line is the number of terms that show up in the document
+# preprocessing
 N, M, word2id, id2word, X = preprocessing(datasetFilePath, stopwordsFilePath)
 
 # lamda[i, j] : p(zj|di)
@@ -212,9 +204,9 @@ p = zeros([N, M, K])
 
 initializeParameters()
 
+# EM algorithm
 oldLoglikelihood = 1
 newLoglikelihood = 1
-
 for i in range(0, maxIteration):
     EStep()
     MStep()
