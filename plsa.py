@@ -1,6 +1,7 @@
-from numpy import *
-from pylab import *
-from math import *
+from numpy import zeros, int8, log
+from pylab import random
+
+import sys
 import jieba
 import re
 import time
@@ -8,15 +9,15 @@ import codecs
 
 
 # segmentation, stopwords filtering and document-word matrix generating
-def preprocessing():
+def preprocessing(datasetFilePath, stopwordsFilePath):
     
     # read the stopwords file
-    file = codecs.open('stopwords.dic','r','utf-8')
+    file = codecs.open(stopwordsFilePath, 'r', 'utf-8')
     stopwords = [line.strip() for line in file] 
     file.close()
     
     # read the documents
-    file = codecs.open('dataset.txt','r','utf-8')
+    file = codecs.open(datasetFilePath, 'r', 'utf-8')
     documents = [document.strip() for document in file] 
     file.close()
 
@@ -127,15 +128,78 @@ def LogLikelihood():
                 loglikelihood += X[i, j] * log(tmp)
     return loglikelihood
 
+def output():
+    # document-topic distribution
+    file = codecs.open(docTopicDist,'w','utf-8')
+    for i in range(0, N):
+        tmp = ''
+        for j in range(0, K):
+            tmp += str(lamda[i, j]) + ' '
+        file.write(tmp + '\n')
+    file.close()
+    
+    # topic-word distribution
+    file = codecs.open(topicWordDist,'w','utf-8')
+    for i in range(0, K):
+        tmp = ''
+        for j in range(0, M):
+            tmp += str(theta[i, j]) + ' '
+        file.write(tmp + '\n')
+    file.close()
+    
+    # dictionary
+    file = codecs.open(dictionary,'w','utf-8')
+    for i in range(0, M):
+        file.write(id2word[i] + '\n')
+    file.close()
+    
+    # top words of each topic
+    file = codecs.open(topicWords,'w','utf-8')
+    for i in range(0, K):
+        topicword = []
+        ids = theta[i, :].argsort()
+        for j in ids:
+            topicword.insert(0, id2word[j])
+        tmp = ''
+        for word in topicword[0:min(topicWordsNum, len(topicword))]:
+            tmp += word + ' '
+        file.write(tmp + '\n')
+    file.close()
+    
+    
+
+    
+# params
+datasetFilePath = 'dataset.txt'
+stopwordsFilePath = 'stopwords.dic'
+K = 10 # number of topic
+maxIteration = 30
+convengenceThreshold = 10.0
+topicWordsNum = 10
+docTopicDist = 'docTopicDistribution.txt'
+topicWordDist = 'topicWordDistribution.txt'
+dictionary = 'dictionary.dic'
+topicWords = 'topics.txt'
+if(len(sys.argv) == 11):
+    datasetFilePath = sys.argv[1]
+    stopwordsFilePath = sys.argv[2]
+    K = int(sys.argv[3])
+    maxIteration = int(sys.argv[4])
+    convengenceThreshold = float(sys.argv[5])
+    topicWordsNum = int(sys.argv[6])
+    docTopicDist = sys.argv[7]
+    topicWordDist = sys.argv[8]
+    dictionary = sys.argv[9]
+    topicWords = sys.argv[10]
+
+        
+    
 # N : number of documents
 # M : length of dictionary
 # word2id : a map mapping terms to their corresponding ids
 # id2word : a map mapping ids to terms
 # X : document-word matrix, N*M, each line is the number of terms that show up in the document
-N, M, word2id, id2word, X = preprocessing()
-
-# number of topic
-K = 10
+N, M, word2id, id2word, X = preprocessing(datasetFilePath, stopwordsFilePath)
 
 # lamda[i, j] : p(zj|di)
 lamda = random([N, K])
@@ -148,17 +212,16 @@ p = zeros([N, M, K])
 
 initializeParameters()
 
-for i in range(0, 20):
+oldLoglikelihood = 1
+newLoglikelihood = 1
+
+for i in range(0, maxIteration):
     EStep()
     MStep()
-    print("[", time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())), "] ", i+1, " iteration  ", str(LogLikelihood()))
+    newLoglikelihood = LogLikelihood()
+    print("[", time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())), "] ", i+1, " iteration  ", str(newLoglikelihood))
+    if(oldLoglikelihood != 1 and newLoglikelihood - oldLoglikelihood < convengenceThreshold):
+        break
+    oldLoglikelihood = newLoglikelihood
 
-# get top words of each topic
-topicwords = []
-topicWordsNum = 10
-for i in range(0, K):
-    topicword = []
-    ids = theta[i, :].argsort()
-    for j in ids:
-        topicword.insert(0, id2word[j])
-    topicwords.append(topicword[0:min(topicWordsNum, len(topicword))])
+output()
