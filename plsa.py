@@ -172,7 +172,7 @@ datasetFilePath = 'dataset.txt'
 stopwordsFilePath = 'stopwords.dic'
 K = 10    # number of topic
 maxIteration = 30
-convengenceThreshold = 10.0
+threshold = 10.0
 topicWordsNum = 10
 docTopicDist = 'docTopicDistribution.txt'
 topicWordDist = 'topicWordDistribution.txt'
@@ -183,7 +183,7 @@ if(len(sys.argv) == 11):
     stopwordsFilePath = sys.argv[2]
     K = int(sys.argv[3])
     maxIteration = int(sys.argv[4])
-    convengenceThreshold = float(sys.argv[5])
+    threshold = float(sys.argv[5])
     topicWordsNum = int(sys.argv[6])
     docTopicDist = sys.argv[7]
     topicWordDist = sys.argv[8]
