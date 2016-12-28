@@ -212,7 +212,7 @@ for i in range(0, maxIteration):
     MStep()
     newLoglikelihood = LogLikelihood()
     print("[", time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())), "] ", i+1, " iteration  ", str(newLoglikelihood))
-    if(oldLoglikelihood != 1 and newLoglikelihood - oldLoglikelihood < convengenceThreshold):
+    if(oldLoglikelihood != 1 and newLoglikelihood - oldLoglikelihood < threshold):
         break
     oldLoglikelihood = newLoglikelihood
 
